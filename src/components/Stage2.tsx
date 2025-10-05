@@ -1,3 +1,4 @@
+import { useMemo, useState } from 'react';
 import { Brain, ArrowRight } from 'lucide-react';
 import { Config } from '../types/config';
 
@@ -8,6 +9,34 @@ interface Stage2Props {
 
 export default function Stage2({ config, onComplete }: Stage2Props) {
   const conversionLines = config.conversion_table.split('\n');
+  const [teamName, setTeamName] = useState('');
+  const [error, setError] = useState('');
+  const submissionsKey = useMemo(() => 'bitsclues_submissions', []);
+
+  const handleProceed = () => {
+    const name = teamName.trim();
+    if (!name) {
+      setError('Please enter your team name.');
+      return;
+    }
+    try {
+      const raw = localStorage.getItem(submissionsKey);
+      const map = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+      if (map && Object.prototype.hasOwnProperty.call(map, name)) {
+        setError('Submission already exists for this team.');
+        return;
+      }
+    } catch {
+      // ignore parse errors, treat as empty
+    }
+    try {
+      localStorage.setItem('bitsclues_team', name);
+    } catch {
+      // ignore storage issues
+    }
+    setError('');
+    onComplete();
+  };
   return (
     <div className="flex items-center justify-center min-h-[70vh]">
       <div className="max-w-4xl w-full space-y-6">
@@ -45,6 +74,18 @@ export default function Stage2({ config, onComplete }: Stage2Props) {
         </div>
 
         <div className="bg-gray-900/50 backdrop-blur-md border border-purple-500/50 rounded-xl p-6">
+          <div className="mb-6">
+            <label className="block text-sm text-purple-300/80 mb-2">Team Name</label>
+            <input
+              value={teamName}
+              onChange={(e) => setTeamName(e.target.value)}
+              placeholder="Enter your team name"
+              className="w-full bg-black/40 border border-purple-500/40 rounded-lg px-4 py-3 text-purple-100 placeholder-purple-300/40 focus:outline-none focus:ring-2 focus:ring-purple-500/60"
+            />
+            {error && (
+              <p className="mt-2 text-sm text-red-400">{error}</p>
+            )}
+          </div>
           <h3 className="text-xl font-bold text-purple-300 mb-4 flex items-center gap-2">
             <span className="text-2xl">→</span>
             Hint
@@ -57,7 +98,7 @@ export default function Stage2({ config, onComplete }: Stage2Props) {
 
           <div className="mt-6 flex justify-center">
             <button
-              onClick={onComplete}
+              onClick={handleProceed}
               className="group bg-gradient-to-r from-magenta-600 to-purple-600 hover:from-magenta-500 hover:to-purple-500 text-white font-bold py-3 px-8 rounded-lg transition-all glow-magenta flex items-center gap-3"
             >
               PROCEED TO STAGE 3

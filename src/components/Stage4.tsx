@@ -13,6 +13,7 @@ export default function Stage4({ config }: Stage4Props) {
   const [score, setScore] = useState(0);
 
   const storageKey = useMemo(() => 'bitsclues_stage4_result', []);
+  const submissionsKey = useMemo(() => 'bitsclues_submissions', []);
 
   useEffect(() => {
     try {
@@ -48,9 +49,19 @@ export default function Stage4({ config }: Stage4Props) {
     setScore(correctCount);
     setSubmitted(true);
 
+    // resolve team name
+    let team = '';
+    try {
+      team = localStorage.getItem('bitsclues_team') || '';
+    } catch {}
+    if (!team) {
+      team = 'unknown';
+    }
+
     // persist result locally
     try {
       const payload = {
+        team,
         answers,
         score: correctCount,
         total: questions.length,
@@ -62,17 +73,25 @@ export default function Stage4({ config }: Stage4Props) {
       // ignore storage errors
     }
 
+    // store team submission registry to block duplicates
+    try {
+      const raw = localStorage.getItem(submissionsKey);
+      const map = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+      map[team] = true;
+      localStorage.setItem(submissionsKey, JSON.stringify(map));
+    } catch {}
+
     // also export CSV immediately
     try {
       const timestamp = new Date().toISOString();
       const percentage = Math.round((correctCount / questions.length) * 100);
-      const headers = ['timestamp','questionId','question','userAnswer','correctAnswer','isCorrect','score','total','percentage'];
+      const headers = ['team','timestamp','questionId','question','userAnswer','correctAnswer','isCorrect','score','total','percentage'];
       const rows = questions.map((q) => {
         const userIndex = answers[q.id];
         const userAns = typeof userIndex === 'number' ? q.choices[userIndex] : '';
         const correctAns = q.choices[q.correctIndex];
         const isCorrect = userIndex === q.correctIndex ? 'TRUE' : 'FALSE';
-        return [timestamp, String(q.id), escapeCsv(q.question), escapeCsv(userAns), escapeCsv(correctAns), isCorrect, String(correctCount), String(questions.length), String(percentage)];
+        return [escapeCsv(team), timestamp, String(q.id), escapeCsv(q.question), escapeCsv(userAns), escapeCsv(correctAns), isCorrect, String(correctCount), String(questions.length), String(percentage)];
       });
       const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
       const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
