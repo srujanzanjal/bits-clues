@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useEffect, useMemo, useState, useRef } from 'react';
 import { Shield, Trophy, CheckCircle, XCircle } from 'lucide-react';
 import { Config } from '../types/config';
 
@@ -11,6 +11,29 @@ export default function Stage4({ config }: Stage4Props) {
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
+  const fileInputRef = useRef<HTMLInputElement | null>(null);
+
+  const storageKey = useMemo(() => 'bitsclues_stage4_result', []);
+
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as {
+        answers: { [key: number]: number };
+        score: number;
+        total: number;
+      };
+      // Only load if it matches current quiz length
+      if (parsed && parsed.total === questions.length) {
+        setAnswers(parsed.answers || {});
+        setScore(parsed.score || 0);
+        setSubmitted(true);
+      }
+    } catch {
+      // ignore parse errors
+    }
+  }, [questions.length, storageKey]);
 
   const handleAnswerChange = (questionId: number, answerIndex: number) => {
     setAnswers({ ...answers, [questionId]: answerIndex });
@@ -25,12 +48,78 @@ export default function Stage4({ config }: Stage4Props) {
     });
     setScore(correctCount);
     setSubmitted(true);
+
+    // persist result locally
+    try {
+      const payload = {
+        answers,
+        score: correctCount,
+        total: questions.length,
+        percentage: Math.round((correctCount / questions.length) * 100),
+        timestamp: new Date().toISOString(),
+      };
+      localStorage.setItem(storageKey, JSON.stringify(payload));
+    } catch {
+      // ignore storage errors
+    }
   };
 
   const resetQuiz = () => {
     setAnswers({});
     setSubmitted(false);
     setScore(0);
+    try {
+      localStorage.removeItem(storageKey);
+    } catch {
+      // ignore
+    }
+  };
+
+  const handleDownload = () => {
+    try {
+      const payload = {
+        answers,
+        score,
+        total: questions.length,
+        percentage: Math.round((score / questions.length) * 100),
+        timestamp: new Date().toISOString(),
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'stage4-result.json';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    } catch {
+      // ignore
+    }
+  };
+
+  const triggerUpload = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleUpload: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text) as { answers: { [key: number]: number }; score: number; total: number };
+      if (!data || typeof data !== 'object' || typeof data.total !== 'number') return;
+      if (data.total !== questions.length) return; // ignore mismatched quiz files
+      setAnswers(data.answers || {});
+      setScore(data.score || 0);
+      setSubmitted(true);
+      // persist
+      localStorage.setItem(storageKey, JSON.stringify({ ...data, percentage: Math.round((data.score / questions.length) * 100), timestamp: new Date().toISOString() }));
+    } catch {
+      // ignore
+    } finally {
+      if (fileInputRef.current) fileInputRef.current.value = '';
+    }
   };
 
   if (submitted) {
@@ -101,12 +190,29 @@ export default function Stage4({ config }: Stage4Props) {
             })}
           </div>
 
-          <button
-            onClick={resetQuiz}
-            className="w-full bg-gradient-to-r from-purple-600 to-magenta-600 hover:from-purple-500 hover:to-magenta-500 text-white font-bold py-3 rounded-lg transition-all glow-purple"
-          >
-            RETAKE QUIZ
-          </button>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+            <button
+              onClick={handleDownload}
+              className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg transition-all"
+            >
+              DOWNLOAD RESULT
+            </button>
+            <div className="hidden">
+              <input ref={fileInputRef} type="file" accept="application/json" onChange={handleUpload} />
+            </div>
+            <button
+              onClick={triggerUpload}
+              className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-all"
+            >
+              LOAD RESULT
+            </button>
+            <button
+              onClick={resetQuiz}
+              className="w-full bg-gradient-to-r from-purple-600 to-magenta-600 hover:from-purple-500 hover:to-magenta-500 text-white font-bold py-3 rounded-lg transition-all glow-purple"
+            >
+              CLEAR SAVED RESULT
+            </button>
+          </div>
 
           <div className="mt-6 pt-6 border-t border-cyan-500/20 text-center">
             <p className="text-cyan-300/70 text-sm">
