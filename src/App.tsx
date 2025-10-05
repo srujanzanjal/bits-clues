@@ -46,9 +46,25 @@ function App() {
       <div className="relative z-10">
         <header className="border-b border-cyan-500/30 bg-black/40 backdrop-blur-sm">
           <div className="container mx-auto px-4 py-6">
-            <h1 className="text-4xl font-bold text-center glow-text-cyan mb-6">
-              BITS & CLUES
-            </h1>
+            <div className="flex items-center justify-between gap-4 mb-6">
+              <h1 className="text-4xl font-bold glow-text-cyan">
+                BITS & CLUES
+              </h1>
+              <button
+                onClick={() => {
+                  try {
+                    localStorage.removeItem('bitsclues_stage4_result');
+                    localStorage.removeItem('bitsclues_submissions');
+                    localStorage.removeItem('bitsclues_team');
+                  } catch {}
+                  setCurrentStage(1);
+                }}
+                className="text-xs md:text-sm px-3 py-2 rounded border border-cyan-500/40 hover:border-cyan-400 bg-black/30"
+                title="Clear saved progress and restart"
+              >
+                Reset Progress
+              </button>
+            </div>
 
             <div className="flex justify-center gap-2 md:gap-4">
               {stages.map((stage) => {
