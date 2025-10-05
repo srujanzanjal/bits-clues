@@ -1,4 +1,5 @@
 import { useMemo, useState } from 'react';
+import { supabase } from '../lib/supabaseClient';
 import { Brain, ArrowRight } from 'lucide-react';
 import { Config } from '../types/config';
 
@@ -13,16 +14,28 @@ export default function Stage2({ config, onComplete }: Stage2Props) {
   const [error, setError] = useState('');
   const submissionsKey = useMemo(() => 'bitsclues_submissions', []);
 
-  const handleProceed = () => {
+  const handleProceed = async () => {
     const name = teamName.trim();
     if (!name) {
       setError('Please enter your team name.');
       return;
     }
     try {
-      const raw = localStorage.getItem(submissionsKey);
-      const map = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
-      if (map && Object.prototype.hasOwnProperty.call(map, name)) {
+      // Check server-side first
+      const { data: existing, error: dbErr } = await supabase
+        .from('quiz_submissions')
+        .select('team_name')
+        .eq('team_name', name)
+        .maybeSingle();
+      if (dbErr) {
+        // fall back to local check on read error
+        const raw = localStorage.getItem(submissionsKey);
+        const map = raw ? (JSON.parse(raw) as Record<string, unknown>) : {};
+        if (map && Object.prototype.hasOwnProperty.call(map, name)) {
+          setError('Submission already exists for this team.');
+          return;
+        }
+      } else if (existing) {
         setError('Submission already exists for this team.');
         return;
       }

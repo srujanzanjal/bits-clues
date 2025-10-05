@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { Shield, Trophy, CheckCircle, XCircle } from 'lucide-react';
 import { Config } from '../types/config';
+import { supabase, QuizSubmissionRow } from '../lib/supabaseClient';
 
 interface Stage4Props {
   config: Config['stage4'];
@@ -72,6 +73,23 @@ export default function Stage4({ config }: Stage4Props) {
     } catch {
       // ignore storage errors
     }
+
+    // submit to Supabase (best-effort)
+    (async () => {
+      try {
+        const row: QuizSubmissionRow = {
+          team_name: team,
+          answers: Object.fromEntries(Object.entries(answers).map(([k, v]) => [String(k), Number(v)])),
+          score: correctCount,
+          total: questions.length,
+          percentage: Math.round((correctCount / questions.length) * 100),
+        };
+        // rely on unique constraint on team_name to block duplicates
+        await supabase.from('quiz_submissions').insert(row).throwOnError();
+      } catch {
+        // ignore network/db errors on UI
+      }
+    })();
 
     // store team submission registry to block duplicates
     try {
