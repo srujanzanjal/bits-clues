@@ -1,0 +1,84 @@
+{
+  "stage1": {
+    "passcode": "010101"
+  },
+  "stage2": {
+    "riddle": "I only say 'yes' when both of my friends say 'yes.' Who am I?",
+    "conversion_table": "A : 01 \nB : 02 \nC : 03 \nD : 04 \nE : 05 \nF : 06 \nG : 07 \nH : 08 \nI : 09 \nJ : 10 \nK : 11 \nL : 12 \nM : 13 \nN : 14 \nO : 15 \nP : 16 \nQ : 17 \nR : 18 \nS : 19 \nT : 20 \nU : 21 \nV : 22 \nW : 23 \nX : 24 \nY : 25 \nZ : 26"},
+  "stage3": {
+    "files": [
+      "011404.enc",
+      "010414.enc",
+      "140104.enc",
+      "140401.enc",
+      "040114.enc",
+      "041401.enc"
+    ],
+    "correct_filename": "011404.enc",
+    "file_password": "AND"
+  },
+  "stage4": {
+    "quiz": [
+      {
+        "id": 1,
+        "question": "Which logic gate outputs true only when both inputs are true?",
+        "choices": ["OR", "AND", "XOR", "NOT"],
+        "correctIndex": 1
+      },
+      {
+        "id": 2,
+        "question": "In Boolean algebra, 0 represents?",
+        "choices": ["True", "False", "Unknown", "Error"],
+        "correctIndex": 1
+      },
+      {
+        "id": 3,
+        "question": "Which gate inverts the input signal?",
+        "choices": ["AND", "XOR", "NOT", "NAND"],
+        "correctIndex": 2
+      },
+      {
+        "id": 4,
+        "question": "Which logic gate outputs true if at least one input is true?",
+        "choices": ["AND", "OR", "NAND", "NOR"],
+        "correctIndex": 1
+      },
+      {
+        "id": 5,
+        "question": "What does XOR stand for?",
+        "choices": ["Extra OR", "Exclusive OR", "Expanded OR", "Extended OR"],
+        "correctIndex": 1
+      },
+      {
+        "id": 6,
+        "question": "Which gate outputs false only when both inputs are true?",
+        "choices": ["NAND", "NOR", "XOR", "NOT"],
+        "correctIndex": 0
+      },
+      {
+        "id": 7,
+        "question": "The output of an OR gate with inputs 0 and 0 is?",
+        "choices": ["0", "1", "Error", "Depends"],
+        "correctIndex": 0
+      },
+      {
+        "id": 8,
+        "question": "Which gate is considered the 'universal gate'?",
+        "choices": ["XOR", "NAND", "OR", "NOT"],
+        "correctIndex": 1
+      },
+      {
+        "id": 9,
+        "question": "The output of a NOT gate with input 1 is?",
+        "choices": ["0", "1", "Error", "Depends"],
+        "correctIndex": 0
+      },
+      {
+        "id": 10,
+        "question": "Which logic gate outputs true only when both inputs are false?",
+        "choices": ["NOR", "NAND", "XOR", "AND"],
+        "correctIndex": 0
+      }
+    ]
+  }
+}
