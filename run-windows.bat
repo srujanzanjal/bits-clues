@@ -14,7 +14,7 @@ if not errorlevel 1 (
     if not errorlevel 1 (
       set PM=npm
     ) else (
-      echo Error: No supported package manager (pnpm, yarn, npm) found in PATH.
+      echo Error: No supported package manager ^(pnpm, yarn, npm^) found in PATH.
       exit /b 1
     )
   )
