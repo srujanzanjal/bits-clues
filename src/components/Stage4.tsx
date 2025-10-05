@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState, useRef } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Shield, Trophy, CheckCircle, XCircle } from 'lucide-react';
 import { Config } from '../types/config';
 
@@ -11,7 +11,6 @@ export default function Stage4({ config }: Stage4Props) {
   const [answers, setAnswers] = useState<{ [key: number]: number }>({});
   const [submitted, setSubmitted] = useState(false);
   const [score, setScore] = useState(0);
-  const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const storageKey = useMemo(() => 'bitsclues_stage4_result', []);
 
@@ -62,66 +61,43 @@ export default function Stage4({ config }: Stage4Props) {
     } catch {
       // ignore storage errors
     }
-  };
 
-  const resetQuiz = () => {
-    setAnswers({});
-    setSubmitted(false);
-    setScore(0);
+    // also export CSV immediately
     try {
-      localStorage.removeItem(storageKey);
-    } catch {
-      // ignore
-    }
-  };
-
-  const handleDownload = () => {
-    try {
-      const payload = {
-        answers,
-        score,
-        total: questions.length,
-        percentage: Math.round((score / questions.length) * 100),
-        timestamp: new Date().toISOString(),
-      };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const timestamp = new Date().toISOString();
+      const percentage = Math.round((correctCount / questions.length) * 100);
+      const headers = ['timestamp','questionId','question','userAnswer','correctAnswer','isCorrect','score','total','percentage'];
+      const rows = questions.map((q) => {
+        const userIndex = answers[q.id];
+        const userAns = typeof userIndex === 'number' ? q.choices[userIndex] : '';
+        const correctAns = q.choices[q.correctIndex];
+        const isCorrect = userIndex === q.correctIndex ? 'TRUE' : 'FALSE';
+        return [timestamp, String(q.id), escapeCsv(q.question), escapeCsv(userAns), escapeCsv(correctAns), isCorrect, String(correctCount), String(questions.length), String(percentage)];
+      });
+      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      const iso = new Date().toISOString().replace(/[:.]/g, '-');
-      a.download = `stage4-result-${iso}.json`;
+      const iso = timestamp.replace(/[:.]/g, '-');
+      a.download = `stage4-result-${iso}.csv`;
       document.body.appendChild(a);
       a.click();
       a.remove();
       URL.revokeObjectURL(url);
     } catch {
-      // ignore
+      // ignore download errors
     }
   };
 
-  const triggerUpload = () => {
-    fileInputRef.current?.click();
-  };
+  // Retake flow intentionally disabled once submitted; helper removed to avoid unused warning
 
-  const handleUpload: React.ChangeEventHandler<HTMLInputElement> = async (e) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text) as { answers: { [key: number]: number }; score: number; total: number };
-      if (!data || typeof data !== 'object' || typeof data.total !== 'number') return;
-      if (data.total !== questions.length) return; // ignore mismatched quiz files
-      setAnswers(data.answers || {});
-      setScore(data.score || 0);
-      setSubmitted(true);
-      // persist
-      localStorage.setItem(storageKey, JSON.stringify({ ...data, percentage: Math.round((data.score / questions.length) * 100), timestamp: new Date().toISOString() }));
-    } catch {
-      // ignore
-    } finally {
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
-  };
+  // helper for CSV safe values (wrap in quotes, escape embedded quotes)
+  function escapeCsv(value: string): string {
+    if (value == null) return '';
+    const v = String(value).replace(/"/g, '""');
+    return `"${v}"`;
+  }
 
   if (submitted) {
     const percentage = (score / questions.length) * 100;
@@ -191,28 +167,8 @@ export default function Stage4({ config }: Stage4Props) {
             })}
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-            <button
-              onClick={handleDownload}
-              className="w-full bg-cyan-600 hover:bg-cyan-500 text-white font-bold py-3 rounded-lg transition-all"
-            >
-              DOWNLOAD RESULT
-            </button>
-            <div className="hidden">
-              <input ref={fileInputRef} type="file" accept="application/json" onChange={handleUpload} />
-            </div>
-            <button
-              onClick={triggerUpload}
-              className="w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-3 rounded-lg transition-all"
-            >
-              LOAD RESULT
-            </button>
-            <button
-              onClick={resetQuiz}
-              className="w-full bg-gradient-to-r from-purple-600 to-magenta-600 hover:from-purple-500 hover:to-magenta-500 text-white font-bold py-3 rounded-lg transition-all glow-purple"
-            >
-              CLEAR SAVED RESULT
-            </button>
+          <div className="mt-4 text-center text-cyan-300/70 text-sm">
+            Your result has been recorded. Retake is disabled.
           </div>
 
           <div className="mt-6 pt-6 border-t border-cyan-500/20 text-center">
