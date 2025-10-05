@@ -98,43 +98,11 @@ export default function Stage4({ config }: Stage4Props) {
       map[team] = true;
       localStorage.setItem(submissionsKey, JSON.stringify(map));
     } catch {}
-
-    // also export CSV immediately
-    try {
-      const timestamp = new Date().toISOString();
-      const percentage = Math.round((correctCount / questions.length) * 100);
-      const headers = ['team','timestamp','questionId','question','userAnswer','correctAnswer','isCorrect','score','total','percentage'];
-      const rows = questions.map((q) => {
-        const userIndex = answers[q.id];
-        const userAns = typeof userIndex === 'number' ? q.choices[userIndex] : '';
-        const correctAns = q.choices[q.correctIndex];
-        const isCorrect = userIndex === q.correctIndex ? 'TRUE' : 'FALSE';
-        return [escapeCsv(team), timestamp, String(q.id), escapeCsv(q.question), escapeCsv(userAns), escapeCsv(correctAns), isCorrect, String(correctCount), String(questions.length), String(percentage)];
-      });
-      const csv = [headers.join(','), ...rows.map(r => r.join(','))].join('\n');
-      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      const iso = timestamp.replace(/[:.]/g, '-');
-      a.download = `stage4-result-${iso}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-    } catch {
-      // ignore download errors
-    }
   };
 
   // Retake flow intentionally disabled once submitted; helper removed to avoid unused warning
 
-  // helper for CSV safe values (wrap in quotes, escape embedded quotes)
-  function escapeCsv(value: string): string {
-    if (value == null) return '';
-    const v = String(value).replace(/"/g, '""');
-    return `"${v}"`;
-  }
+  
 
   if (submitted) {
     const percentage = (score / questions.length) * 100;
