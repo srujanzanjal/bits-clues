@@ -5,20 +5,14 @@ echo === Detecting package manager ===
 where pnpm >nul 2>&1
 if not errorlevel 1 (
   set PM=pnpm
-  set INSTALL_CMD=pnpm install --frozen-lockfile || pnpm install
-  set RUN_DEV=pnpm dev
 ) else (
   where yarn >nul 2>&1
   if not errorlevel 1 (
     set PM=yarn
-    set INSTALL_CMD=yarn install --frozen-lockfile || yarn install
-    set RUN_DEV=yarn dev
   ) else (
     where npm >nul 2>&1
     if not errorlevel 1 (
       set PM=npm
-      set INSTALL_CMD=npm ci || npm install
-      set RUN_DEV=npm run dev
     ) else (
       echo Error: No supported package manager (pnpm, yarn, npm) found in PATH.
       exit /b 1
@@ -27,6 +21,10 @@ if not errorlevel 1 (
 )
 
 echo === Using %PM% ===
+if "%PM%"=="" (
+  echo Error: Package manager detection failed.
+  exit /b 1
+)
 echo === Installing dependencies ===
 call %PM% -v >nul 2>&1
 if errorlevel 1 (
