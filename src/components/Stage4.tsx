@@ -88,7 +88,8 @@ export default function Stage4({ config }: Stage4Props) {
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = 'stage4-result.json';
+      const iso = new Date().toISOString().replace(/[:.]/g, '-');
+      a.download = `stage4-result-${iso}.json`;
       document.body.appendChild(a);
       a.click();
       a.remove();
