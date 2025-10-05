@@ -2,29 +2,23 @@
 setlocal ENABLEDELAYEDEXPANSION
 
 echo === Detecting package manager ===
+set "PM="
 where pnpm >nul 2>&1
-if not errorlevel 1 (
-  set PM=pnpm
-) else (
+if not errorlevel 1 set "PM=pnpm"
+if "%PM%"=="" (
   where yarn >nul 2>&1
-  if not errorlevel 1 (
-    set PM=yarn
-  ) else (
-    where npm >nul 2>&1
-    if not errorlevel 1 (
-      set PM=npm
-    ) else (
-      echo Error: No supported package manager ^(pnpm, yarn, npm^) found in PATH.
-      exit /b 1
-    )
-  )
+  if not errorlevel 1 set "PM=yarn"
+)
+if "%PM%"=="" (
+  where npm >nul 2>&1
+  if not errorlevel 1 set "PM=npm"
+)
+if "%PM%"=="" (
+  echo Error: No supported package manager ^(pnpm, yarn, npm^) found in PATH.
+  exit /b 1
 )
 
 echo === Using %PM% ===
-if "%PM%"=="" (
-  echo Error: Package manager detection failed.
-  exit /b 1
-)
 echo === Installing dependencies ===
 call %PM% -v >nul 2>&1
 if errorlevel 1 (
@@ -32,16 +26,22 @@ if errorlevel 1 (
   exit /b 1
 )
 
-rem Try ci/frozen first, then fall back
+rem Try frozen/ci first, then fall back
 if /I "%PM%"=="npm" (
   call npm ci
-  if errorlevel 1 call npm install
+  if errorlevel 1 (
+    call npm install
+  )
 ) else if /I "%PM%"=="yarn" (
   call yarn install --frozen-lockfile
-  if errorlevel 1 call yarn install
+  if errorlevel 1 (
+    call yarn install
+  )
 ) else if /I "%PM%"=="pnpm" (
   call pnpm install --frozen-lockfile
-  if errorlevel 1 call pnpm install
+  if errorlevel 1 (
+    call pnpm install
+  )
 )
 
 if errorlevel 1 (
